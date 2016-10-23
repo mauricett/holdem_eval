@@ -561,9 +561,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 
 int main()
 {
-	int board[10]{ 0, 1, 0, 2, 1, 3, 10, 3, 11, 3 }; //  = { (rank1, suit1), (rank2, suit2), ...}; // die 5 board cards, (0,1) == "2d", usw usw
 	int board_alt[10]{ 0,5, 4, 1, 2, 3, 3, 3 , 0, 3 }; // = { (rank1, rank2 ...), (suit1, suit2 ...) }; // glaube ist besser, weil wir ja sortieren müssen
-	int hands[6 * 2 * 2]{ 6, 0, 6, 1 }; // (6,0),(6,1) ist hand von player#1, usw usw
 	int hands_alt[6 * 2 * 2]{ 6, 6, 0, 1 }; // (rank1, rank2, ...), (suit1, suit2 ...), ...
 	int *cards[52];
 
