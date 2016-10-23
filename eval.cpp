@@ -45,19 +45,7 @@ constexpr int cardcnt = 7;
 
 int merged[cardcnt * player]; //ohne suits
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//MASTER PLAN: 
-//"master funktion" in der alle allocations von eval_ranks gemacht werden
-//und dann eval_ranks in der funktion callen
-//so sparn wir uns die ständigen allocations.
-//evtl einen zusammenhängenden speicher allocaten?!
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-//approach: alle starthände sofort mit board std::merge() vereinigen und dif[i] für die <= 7 card hands für <= 6 player ausrechnen
-//wichtig:drei verschiedene eval stufen denkbar, jede hat einen wichtigen vorteil:
-// 1) nur den winner evaluaten //wenn es einen klaren winner gibt, kann die berechnung abgebrochen werden. gut für monte carlo equity!
-// 2) ranks only //vereinfachte version von 3), falls kicker nicht benötigt werden um ranking zu bestimmen -> spart rechenzeit
-// 3) ranks & kicker //um an jedem spot das ranking einschätzen zu können -> awareness über draws, die man mit allin equity nicht hat!
 void eval_ranks(int(&hands)[6 * 2 * 2], int(&board)[10], int(&merged)[cardcnt * player], const int player)
 {
 	//int ranks[6] = {}; //ranks der player: 1-13 X-high; 21-33 X-pair; 41-53 two-pair; 61-73 trips; 81-93 straight; 101-113 flush; 121-133 FH; 141
