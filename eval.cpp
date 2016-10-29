@@ -52,21 +52,38 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 	{
 		merge(hands + 4 * i, hands + 2 + 4 * i, board, board + 5, merged + 7 * i);
 	}
-
+	cout << endl << "merged :" << endl;
+	for (int p = 0; p < 4; ++p)
+	{
+		cout << "Player " << p + 1 << "'s Deck:  ";
+		for (int i = 0; i < 7; ++i)
+		{
+			cout << merged[i + 7 * p] << ' ';
+		}
+		cout << endl;
+	}
 	int flush_cnt[4 + 4] = { 0, 0, 0, 0, 0, 1, 2, 3 }; //vier 0-initializer und (0,1,2,3) sind die suits.
 	for (int i = 5; i < 10; ++i)
 	{
 		++flush_cnt[board[i]];
 	}
-
-	int player_ranks[6 * 11] = {}; //all ranks a player achieved, 11 different ranks, max 6 players:
-	int rank_cnt[11] = {}; //0 high card, 1 pair, 2 twopair, 3 trips, 4, wheelie, 5 straight, 6 flush, 7 fh, 8 quads, 8 wheelie sf, 10 sf
+	//all ranks a player achieved, 11 different ranks, max 6 players:
+	int player_ranks[6 * 11] = {}; //0 high card, 1 pair, 2 twopair, 3 trips, 4, wheelie, 5 straight, 6 flush, 7 fh, 8 quads, 9 wheelie sf, 10 sf
+	int rank_cnt[11] = {}; 
 
 	//flush möglich?
 	int* max_elmnt = max_element(flush_cnt, flush_cnt + 4);
 	int has_flush[6] = {};
 	int flushs = 0;
-	int max_suit = *(max_elmnt + 4); //suit des max_elements
+	int max_suit = *(max_elmnt + 4); //suit des max_elements						 
+	int sflush[7 * 6] = {}; //array with all cards of winning suit, max 7 cards * 6 players
+	int sf_dif[6 * 6]; //6 difs * 6 players
+	int sf_cnt[6] = {};
+	for (int i = 0; i < 42; ++i)
+	{
+		sflush[i] = -1;
+	}
+	int flush_cards[6] = {}; //number of flush cards per player
 
 	if (*max_elmnt > 2)
 	{
@@ -79,6 +96,9 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				{
 					++player_ranks[11 * i + 6];
 					++rank_cnt[6];
+					sflush[7 * i] = hands[4 * i];
+					sflush[7 * i + 1] = hands[4 * i + 1];
+					flush_cards[i] = 2;
 				}
 			}
 			break;
@@ -89,6 +109,8 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				{
 					++player_ranks[11 * i + 6];
 					++rank_cnt[6];
+					if (hands[4 * i + 2] == max_suit) { sflush[7 * i] = hands[4 * i]; ++flush_cards[i]; }
+					if (hands[4 * i + 3] == max_suit) { sflush[7 * i + 1] = hands[4 * i + 1]; ++flush_cards[i]; }
 				}
 			}
 			break;
@@ -98,11 +120,21 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			{
 				++player_ranks[11 * i + 6];
 				++rank_cnt[6];
+				if (hands[4 * i + 2] == max_suit) { sflush[7 * i] = hands[4 * i]; ++flush_cards[i];	}
+				if (hands[4 * i + 3] == max_suit) { sflush[7 * i + 1] = hands[4 * i + 1]; ++flush_cards[i];	}
 			}
 			break;
 
 		default:
 			cout << "FEHLER IN FLUSH SEKTION" << endl;
+		}
+		for (int p = 0; p < player; ++p)
+		{
+			for (int c = 0; c < 5; ++c)
+			{
+				if (board[c + 5] == max_suit) { sflush[7 * p + 2 + c] = board[c]; ++flush_cards[p]; }
+			}
+			sort(begin(sflush) + 7 * p, begin(sflush) + 7 * p + 7);
 		}
 	}
 	
@@ -113,7 +145,9 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 	int straight[6] = {};
 	int str_tmp[6] = {};
 	int max_tmp[6] = {}; //tmp zum zwischenspeichern und vergleichen der max-größe
-	int *straight_poiner[6];
+	int *sflush_pointer[7*6]; //max 7 cards * 6 players
+	int *straight_pointer[6];
+	int sflushs[6] = {}; //sflushs[player] >= 5 means straight flush
 
 	for (int p = 0; p < player; ++p)
 	{
@@ -146,7 +180,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				case 1:
 					++str_tmp[p];
 					if (str_tmp[p] > straight[p]) { straight[p] = str_tmp[p]; }
-					if (straight[p] >= 4) { straight_poiner[p] = &(merged[7 * p + i + 1]); } 	//pointer auf letzte straight-karte!
+					if (straight[p] >= 4) { straight_pointer[p] = &(merged[7 * p + i + 1]); } 	//pointer auf letzte straight-karte!
 					break;
 				default:
 					max_tmp[p] = 0;
@@ -217,19 +251,108 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 					break;
 				}
 			}
-			if (rest[0] && rest[1] && rest[2]) { wheelie[p] = 1; }
+			if (rest[0] && rest[1] && rest[2]) { wheelie[p] = 1; player_ranks[11 * p + 4] = 1; ++rank_cnt[4]; }
 		}
 		
 		cout << endl << endl << "Player " << p + 1 << ":" << endl;
+		//check for wheelie, straight, flush, wheelie straight flush, straight flush
+		//WICHTIG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//MÜSSEN BEACHTEN: MAN KANN NORMALE STRAIGHT HABEN UND WHEELIE STRAIGHT FLUSH!!!!!!!!!!!!!
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//add all flush cards:
+		/*for (int c = 0; c < 5; ++c)
+		{
+			if (board[c + 5] == max_suit) { sflush[7 * p + 2 + c] = board[c]; ++flush_cards[p]; }
+		}
+		sort(begin(sflush) + 7 * p, begin(sflush) + 7 * p + 7);*/
 
-		if ((straight[p] < 4) && (wheelie[p] == 0)) { cout << "keine straight!" << endl; }
-		else if (straight[p] >= 4) { cout << "straight!" << endl; }
-		else if (wheelie[p] == 1) { cout << "wheelie!" << endl; }
+		if ((straight[p] < 4) && (wheelie[p] == 0)) 
+		{ cout << "keine straight!" << endl; }
+		else if (straight[p] >= 4)//check for straight and straight flush
+		{ 
+			int cntr = 0;
+			cout << "straight!" << endl; 
+			switch (player_ranks[p * 11 + 6])
+			{
+			case 0: 
+				++player_ranks[p * 11 + 5]; ++rank_cnt[5];
+				break;
+			case 1:
+				//check for straightflush
+				//add board to int sflush[7*6];								
+				for (int i = 0; i < (cardcnt - 1); ++i)
+				{
+					if (sflush[7 * p + i] >= 0) { sf_dif[i + 6 * p] = sflush[i + 1 + 7 * p] - sflush[i + 7 * p]; ++cntr; }
+				}			
+				//(flush_cards-1) is the number of difs between our flush cards, 6-% is the actual starting position,
+				//considering we dont always have 7 flush cards (so the first few entries will be empty and be equal to -1,
+				//due to my initialization of sf_dif; ... this is meant to differentiate between card rank "2" == 0 and "not a card".
+				if (sf_dif[6 * p + (6 - (flush_cards[p] - 1))] == 1) { sflush_pointer[7 * p] = &(sflush[7 * p + (6 - (flush_cards[p] - 1))]); ++sflushs[p]; ++sf_cnt[p]; }
+				for (int i = 1; i < cntr; ++i) //cntr ist die anzahl der difs.
+				{
+					switch (sf_dif[i - 1 + 6 * p + (6 - (flush_cards[p] - 1))])
+					{
+					case 1:
+					{
+						switch (sf_dif[i + 6 * p + (6 - (flush_cards[p] - 1))])
+						{
+						case 1:
+							sflush_pointer[7 * p + sflushs[p]] = &(sflush[7 * p + i + (6 - (flush_cards[p] - 1))]);
+							++sflushs[p];
+							if (sflushs[p] > sf_cnt[p]) { sf_cnt[p] = sflushs[p]; }
+							break;
+						default:
+							sflushs[p] = 0;
+							break;
+						}
+					}
+					break;
+
+					default:
+					{
+						switch (dif[i + 6 * p + (6 - (flush_cards[p] - 1))])
+						{
+						case 1://PROBLEM .... difs = {1, 1, 1, 1, !=1, 1} setzt einen pointer auf die letzte 1 ... daher if(i<4), hoffe das reicht
+							if (i < 4) { sflush_pointer[7 * p + sflushs[p]] = &(sflush[7 * p + i + (6 - (flush_cards[p] - 1))]); }
+							++sflushs[p];
+							break;
+						default:
+							sflushs[p] = 0;
+							break;
+						}
+					}
+					}
+				}
+				if (sf_cnt[p] > 3) { cout << "player " << p << " has straight flush !!!!!!!!!!!" << endl; player_ranks[11 * p + 10] = 1; ++rank_cnt[10]; }
+				//else { player_ranks[11 * p + 5] = 1; ++rank_cnt[5]; } //unnötig, haben hier sowieso mindestens flush.
+				break;
+			default:
+				cout << "fehler in straight flush sektion" << endl;
+				break;
+			}
+		}
+		if ((wheelie[p] == 1) && (player_ranks[11 * p + 6] == 1) && (player_ranks[11 * p + 10] == 0)) //if no sf -> check wheelie sf
+		{ /*check for wheelie sf*/ 
+			if ((sflush[7 - flush_cards[p] + 7 * p] == 0) && (sflush[6 + 7 * p] == 12) && (sflush[7 - flush_cards[p] + 1 + 7 * p] == 1) && (sflush[7 - flush_cards[p] + 2 + 7 * p] == 2) && (sflush[7 - flush_cards[p] + 3 + 7 * p] == 3))//&& (sf_dif[6 * p + (6 - (flush_cards[p] - 1))] == 1) && (sf_dif[6 * p + (6 - (flush_cards[p] - 1))] == 1) && (sf_dif[6 * p + (6 - (flush_cards[p] - 1))] == 1)
+			{
+				player_ranks[11 * p + 9] = 1; ++rank_cnt[9];
+				cout << "WHEELIE SF OMGG !!!" << endl;
+			}
+		} 
+		//else if (wheelie[p] == 1) { cout << "wheelie!" << endl; } //müssen rank counts hier nicht updaten. haben wir schon gemacht für wheelie!
+
+		//dient nur zum debuggen und kann ganz weg. ich lass es mal als erinnerung drin, weil es instruktiv ist, mit dem sf_cnt + 1;
+		if (player_ranks[11 * p + 10] == 1) {
+			cout << "straight flush cards player " << p << ':' << endl;
+			for (int c = 0; c < sf_cnt[p] + 1; c++)
+			{
+				cout << *(sflush_pointer[7 * p] + c) << ' ';
+			}
+			cout << endl;
+		}
 
 		if (player_ranks[p*11 + 6]) { cout << "flush!" << endl; }
 		if (!(player_ranks[p * 11 + 6])) { cout << "kein flush!" << endl; }
-
-		//remember, haben: int *straight_poiner[6]; um straight zu checken. pointer auf höchstes element der straight
 
 		switch (max_size_grp[p])
 		{
@@ -243,7 +366,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			else { ++rank_cnt[2]; player_ranks[p * 11 + 2] = 1; cout << "two pair" << endl; }
 			break;
 		case 2:
-			if (cnt_zero_grps[p] == 1) { cout << "trips" << endl; }
+			if (cnt_zero_grps[p] == 1) { ++rank_cnt[3]; player_ranks[p * 11 + 3] = 1; cout << "trips" << endl; }
 			else { cout << "full house" << endl; }
 			break;
 		case 3:
@@ -253,8 +376,6 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			cout << "error in pair section" << endl;
 			break;
 		}
-
-		//remember, haben: int *straight_poiner[6]; um straight zu checken. pointer auf höchstes element der straight
 
 		if (((straight[p] >= 4 || wheelie[p]) && player_ranks[p * 11 + 6]))
 		{
@@ -279,7 +400,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 	int rank = 10;
 	int winning_rank = 0;
 
-	//find winning rank (pair, twopair, etc... 10 different ranks!)
+	//find winning rank (pair, twopair, etc... 11 different ranks!)
 	while (rank)
 	{
 		if (rank_cnt[rank] != 0) { winning_rank = rank; rank = 0; }
@@ -312,9 +433,9 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 		switch (winning_rank)
 		{
 		case 0: /*high card*/
-			counter = 0;
 			for (int c = 0; c < (cardcnt - 2); ++c) //müssen nur die 5 höchsten karten vergleichen
 			{
+				counter = 0;
 				for (int i = 0; i < playrs_left; ++i)  //for schleife zählt durch involved_players[i];
 				{
 					compare_cards[i] = merged[7 * involved_players[i] + (cardcnt - 1) - c];
@@ -418,6 +539,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 					}
 
 					playrs_left = counter;
+					if (playrs_left == 1) { cout << endl << endl << endl << "winner ist player " << involved_players[0]; break; }
 					if ((c == 2) && (playrs_left > 1)) // c==2 means we're in the last loop of for, meaning looking at the lowest of the 5 cards
 					{
 						/*tie*/
@@ -428,7 +550,6 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 						}
 						cout << endl;
 					}
-					if (playrs_left == 1) { cout << endl << endl << endl << "winner ist player " << involved_players[0]; break; }
 				}
 			}
 			break;
@@ -480,7 +601,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				if (*pointer_two_pair[p] == max_pair) { still_involved[counter] = involved_players[p]; ++counter; }
 			}
 			playrs_left = counter;
-			if (playrs_left == 1) { cout << "jemand hat höchstes zweites paar - player " << involved_players[0] + 1 << endl; break; }
+			if (playrs_left == 1) { cout << "jemand hat höchstes zweites paar - player " << still_involved[0] << endl; break; }
 			//else: überschreiben die beiden twopairs mit nullen und sortieren die restliche liste. dann max elements vergleichen.
 			for (int p = 0; p < playrs_left; ++p)
 			{
@@ -515,7 +636,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				if (merged[7 * still_involved[p] + 6] == counter) { involved_players[counter2] = still_involved[p]; ++counter2; }
 			}
 			playrs_left = counter2;
-			if (playrs_left == 1) { cout << "twopair winner mit bestem kicker " << involved_players[0] + 1 << endl; }
+			if (playrs_left == 1) { cout << "twopair winner mit bestem kicker " << involved_players[0] + 1 << endl; break; }
 			else 
 			{ 
 				cout << "tie between players ";
@@ -526,10 +647,114 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			}
 			break;
 		case 3:/*trips*/
+			counter = 0;
+			max_pair = 0;
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				for (int c = 5; c >= 0; --c)
+				{
+					if (dif[c + 6 * involved_players[p]] == 0)
+					{
+						pointer_to_pair[p] = &(merged[7 * involved_players[p] + c]); //pointer to middle trips' card, lol.
+						break;
+					}
+				}
+				if (*pointer_to_pair[p] > max_pair) { max_pair = *pointer_to_pair[p]; }
+			}
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				if (*pointer_to_pair[p] == max_pair) { still_involved[counter] = involved_players[p]; ++counter; }
+			}
+			playrs_left = counter;
+	
+			if (playrs_left == 1) { cout << "jemand hat höchste trips - player " << still_involved[0] << endl; break; }
+			//else: update involved players for further investigation =)
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				involved_players[p] = still_involved[p];
+			}
+			//taktik: set the trips cards to 0 and sort merged[], then compare highest two cards
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				for (int c = 5; c >= 0; --c)
+				{
+					if (dif[c + 6 * involved_players[p]] == 0)
+					{
+						pointer_to_pair[p] = &(merged[7 * involved_players[p] + c]); //pointer to middle trips' card, lol.
+						break;
+					}
+				}
+
+				*pointer_to_pair[p] = 0;
+				*(pointer_to_pair[p] + 1) = 0;
+				*(pointer_to_pair[p] - 1) = 0;
+
+				sort(begin(merged) + 7 * still_involved[p], begin(merged) + 7 * still_involved[p] + 7);
+			}
+			counter = 0; //tmp für höchsten kicker
+			counter2 = 0; //anzahl spieler mit höchstem kicker
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				if (merged[7 * involved_players[p] + 6] > counter) { counter = merged[7 * involved_players[p] + 6]; }
+			}
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				if (merged[7 * involved_players[p] + 6] == counter) { still_involved[counter2] = involved_players[p]; ++counter2; }
+			}
+			playrs_left = counter2;
+			if (playrs_left == 1) { cout << "trips mit bestem kicker " << still_involved[0] << endl; break; }
+			//else check second kicker
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				involved_players[p] = still_involved[p];
+			}
+			counter = 0;
+			counter2 = 0;
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				if (merged[7 * involved_players[p] + 5] > counter) { counter = merged[7 * involved_players[p] + 5]; }
+			}
+			for (int p = 0; p < playrs_left; ++p)
+			{
+				if (merged[7 * involved_players[p] + 5] == counter) { still_involved[counter2] = involved_players[p]; ++counter2; }
+			}
+			if (counter2 == 1) { cout << "trips mit best 2nd kicker: " << still_involved[0] << endl; }
+			else
+			{
+				cout << "tie between players: ";
+				for (int i = 0; i < counter2; ++i)
+				{
+					cout << still_involved[i] << ' ';
+				}
+				cout << endl;
+			}
+
 			break;
 		case 4:/*wheelie*/
+			//only tie possible!
+			cout << "WHEELIE TIE BETWEEN PLAYERS ";
+			for (int i = 0; i < playrs_left; ++i)
+			{
+				cout << involved_players[i] << ' ';
+			}
+			cout << endl;
 			break;
 		case 5:/*straight*/
+			//straight_pointer[7*p + 6] ist pointer auf höchste straight karte
+			counter = 0; //use as tmp max
+			counter2 = 0; //how many players involved?
+			//only need to check highest card
+			for (int i = 0; i < playrs_left; ++i)
+			{
+				if (*straight_pointer[involved_players[i]] > counter) { counter = *straight_pointer[involved_players[i]]; }
+			}
+			for (int i = 0; i < playrs_left; ++i)
+			{
+				if (*straight_pointer[involved_players[i]] == counter) { still_involved[counter2] = involved_players[i]; ++counter2; }
+			}
+			playrs_left = counter2;
+			if (playrs_left == 1) { cout << "straight winnarrrrrrrRRRRr player " << still_involved[0] << endl; break; }
+			else { cout << "straight tie !!! between players "; for (int i = 0; i < playrs_left; ++i) { cout << still_involved[i] << ' '; } }
 			break;
 		case 6:/*flush*/
 			break;
@@ -538,24 +763,58 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 		case 8:/*quads*/
 			break;
 		case 9:/*sf wheelie*/
+			   //only tie possible!
+			cout << "SF WHEELIE TIE BETWEEN PLAYERS ";
+			for (int i = 0; i < playrs_left; ++i)
+			{
+				cout << involved_players[i] << ' ';
+			}
+			cout << endl;
 			break;
 		case 10:/*sf*/
+			for (int c = 0; c < (cardcnt - 2); ++c) //müssen nur die 5 höchsten karten vergleichen
+			{
+				counter = 0;
+				cout << "compare_cards = ";
+				for (int i = 0; i < playrs_left; ++i)  //for schleife zählt durch involved_players[i];
+				{
+					compare_cards[i] = *(sflush_pointer[7 * involved_players[i]] + sf_cnt[involved_players[i]] - c);
+					cout << compare_cards[i] << " ";
+					//cout << "player " << 
+					//compare_cards[i] = merged[7 * involved_players[i] + (cardcnt - 1) - c];
+				}
+				cout << endl << endl;
+				int max_value = 0;//let's compare the highest high cards in merged
+				for (int i = 0; i < playrs_left; ++i)
+				{
+					if (compare_cards[i] > max_value) { max_value = compare_cards[i]; }
+				}
+				for (int i = 0; i < playrs_left; ++i)
+				{
+					if (compare_cards[i] == max_value) { still_involved[counter] = involved_players[i]; ++counter; }
+				}
+				for (int i = 0; i < counter; ++i)
+				{
+					involved_players[i] = still_involved[i];
+				}
+				playrs_left = counter;
+				if ((c == (cardcnt - 3)) && (playrs_left > 1))
+				{
+					/*tie*/
+					cout << endl << "playrs left = " << playrs_left << endl << "sf tie zwischen player " << endl;
+					for (int i = 0; i < playrs_left; ++i)
+					{
+						cout << involved_players[i] << ", ";;
+					}
+				}
+				if (playrs_left == 1) { cout << endl << endl << endl << "sf winner ist player " << involved_players[0]; break; }
+			}
 			break;
 		default:
 			cout << "ERROR IN ORDERING SEKTION" << endl;
 		}
 		delete[] compare_cards;
 	}
-
-
-
-
-
-	//!!!!!!!!!!!!!!!!
-	//WICHTIG!!!!!!!!!
-	//EXPERIMENT DAS KLAPPEN MUSS: 012345A mit straight flush (kein wheelie sf), normaler sf muss gewinnen!
-	//!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!
 }
 
 
