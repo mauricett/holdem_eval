@@ -740,7 +740,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			cout << endl;
 			break;
 		case 5:/*straight*/
-			//straight_pointer[7*p + 6] ist pointer auf höchste straight karte
+			//straight_pointer[p] ist pointer auf höchste straight karte
 			counter = 0; //use as tmp max
 			counter2 = 0; //how many players involved?
 			//only need to check highest card
