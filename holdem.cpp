@@ -6,7 +6,6 @@
 
 using namespace std;
 
-//Folgendes Board zur verbesserten Lesbarkeit bei Usereingabe, d.h. brauchen noch translate() Funktion.
 string crds[52] =
 {
 	"2s", "2d", "2h", "2c",
@@ -54,14 +53,6 @@ int merged[cardcnt * player]; //ohne suits
 
 
 
-	//!!!!!!!!!!!!!!!!
-	//WICHTIG!!!!!!!!!
-	//EXPERIMENT DAS KLAPPEN MUSS: 012345A mit straight flush (kein wheelie sf), normaler sf muss gewinnen!
-	//NOCH EINS: HABEN NORMALE STRAIGHT & WHEELIE SF -> WHEELIE SF MUSS GEWINNEN
-	//CHECKEN: JEDER PLAYER_RANKS[] WIRD NUR EINMAL GESETZT? wichtig!
-	//!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!
-
 
 
 
@@ -82,19 +73,22 @@ int main()
 	//int board1[10] = { 1, 2, 3, 4, 10, 1, 1, 0, 0, 3 };
 	//int hands1[24] = { 6, 12, 2, 0, 3, 4, 0, 0, 0, 12, 1, 1, 6, 12, 1, 3 }; //getting bad results here
 	//int hands1[24] = { 2, 3, 0, 1, 7, 8, 2, 3, 10, 11, 1, 1, 5, 5, 0, 1 }; //a little bit better results .. looks like problem with flushs, straights or wheelie
-	int hands1[24] = { 2, 3, 0, 1, 7, 8, 2, 3 };
-	int board1[10] = { 1, 0, 6, 10, 10, 1, 2, 0, 1, 3 };
+	int hands1[24] = { 0, 1, 0, 0, 11, 12,0, 0 };
+	int board1[10] = { 12, 5, 12, 12, 10, 3, 0, 2, 1, 2 };
 	//int board1[10] = { 1, 1, 9, 9, 9, 1, 2, 0, 0, 2 };
 	//int hands1[24] = { 6, 9, 2, 3, 5, 9, 0, 3, 4, 6, 1, 1, 3, 3, 1, 3 };
 	/*generate_board(board1, hands1, cds, 4);
 	find_winner(board1, hands1, merged, result, tie, 4);*/
 	
+
+	//problemo Board: Ac 7s Ah Ad Qh
+
 	int draw = 0;
-	
+	/*
 	for (int n = 0; n < 1000000; ++n)
 	{
 		int result2[1 + 2 * 6] = {};
-		generate_board(board1, hands1, cds, 2);
+		//generate_board(board1, hands1, cds, 2);
 		cout << "Board: ";
 		for (int c = 0; c < 5; ++c)
 		{
@@ -113,14 +107,11 @@ int main()
 		}
 			
 		getchar();
-	}
+	}*/
 	
-	//probleme:
-	//1)
-	//board = 8c 7s 3h 6s 5h 
 
 	
-	/*
+	
 	for (int n = 1; n < 12; ++n)
 	{
 		for (int i = 0; i < 1000000; ++i)
@@ -143,8 +134,7 @@ int main()
 	}
 	cout << "summe: " << sum << endl;
 	cout << "result[0] = " << result[0] << endl;
-	cout << "tie[6] = " << tie[6] << endl;*/
-
+	cout << "tie[6] = " << tie[6] << endl;
 
 	getchar();
 	return 0;

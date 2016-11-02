@@ -140,7 +140,6 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 		{
 			dif[i + 6 * p] = merged[i + 1 + 7 * p] - merged[i + 7 * p];
 		}
-
 		for (int i = 1; i < (cardcnt - 1); ++i)
 		{
 			switch (dif[i - 1 + 6 * p])
@@ -157,10 +156,12 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				case 1:
 					++str_tmp[p];
 					if (str_tmp[p] > straight[p]) { straight[p] = str_tmp[p]; }
-					if (straight[p] >= 4) { straight_pointer[p] = &(merged[7 * p + i + 1]); } 	//pointer auf letzte straight-karte!
+					if (straight[p] >= 4) {
+						straight_pointer[p] = &(merged[7 * p + i + 1]); } 	//pointer auf letzte straight-karte!
 					break;
 				default:
 					max_tmp[p] = 0;
+					str_tmp[p] = 0;
 					break;
 				}
 			}
@@ -182,6 +183,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 					break;
 				default:
 					max_tmp[p] = 0;
+					str_tmp[p] = 0;
 					break;
 				}
 			}
@@ -207,7 +209,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			}
 			}
 		}
-
+			
 		bool wheelie[6] = {};
 		//geschickte bedingung um wheelie möglichkeiten vorzuselektieren:
 		if ((merged[7 * p] == 0) && (merged[6 + 7 * p] == 12) && ((dif[6 * p] == 0) || (dif[6 * p] == 1)) && ((dif[6 * p + 1] == 0) || (dif[6 * p + 1] == 1)) && ((dif[6 * p + 2] == 0) || (dif[6 * p + 2] == 1)))
@@ -626,8 +628,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				if (*pointer_to_pair[p] == max_pair) { still_involved[counter] = involved_players[p]; ++counter; }
 			}
 			playrs_left = counter;
-
-			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; break; }
+			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * still_involved[0]]; break; }
 			//else: update involved players for further investigation =)
 			for (int p = 0; p < playrs_left; ++p)
 			{
@@ -662,7 +663,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				if (merged[7 * involved_players[p] + 6] == counter) { still_involved[counter2] = involved_players[p]; ++counter2; }
 			}
 			playrs_left = counter2;
-			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; break; }
+			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * still_involved[0]]; break; }
 			//else check second kicker
 			for (int p = 0; p < playrs_left; ++p)
 			{
@@ -678,7 +679,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			{
 				if (merged[7 * involved_players[p] + 5] == counter) { still_involved[counter2] = involved_players[p]; ++counter2; }
 			}
-			if (counter2 == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; }
+			if (counter2 == 1) { ++result[0]; ++result[1 + 2 * still_involved[0]]; }
 			else
 			{
 				/*tie*/
@@ -686,8 +687,8 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				++tie[6];
 				for (int i = 0; i < counter2; ++i)
 				{
-					++result[2 + 2 * involved_players[i]];
-					tie[involved_players[i]] += 1. / counter2;
+					++result[2 + 2 * still_involved[i]];
+					tie[still_involved[i]] += 1. / counter2;
 
 				}
 			}
@@ -717,8 +718,8 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				if (*straight_pointer[involved_players[i]] == counter) { still_involved[counter2] = involved_players[i]; ++counter2; }
 			}
 			playrs_left = counter2;
-			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; break; }
-			else {/*tie*/ ++result[0]; ++tie[6]; for (int i = 0; i < playrs_left; ++i) { ++result[2 + 2 * involved_players[i]]; tie[involved_players[i]] += 1. / playrs_left; } }
+			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * still_involved[0]]; break; }
+			else {/*tie*/ ++result[0]; ++tie[6]; for (int i = 0; i < playrs_left; ++i) { ++result[2 + 2 * still_involved[i]]; tie[still_involved[i]] += 1. / playrs_left; } }
 			break;
 		case 6:/*flush*/
 			for (int c = 0; c < (cardcnt - 2); ++c) //müssen nur die 5 höchsten karten vergleichen
@@ -853,7 +854,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			}
 			playrs_left = counter;
 
-			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; break; }
+			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * still_involved[0]]; break; }
 			//else: check kicker
 			for (int i = 0; i < playrs_left; ++i)
 			{
@@ -878,7 +879,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				if (compare_cards[i] == counter2) { still_involved[counter] = involved_players[i]; ++counter; }
 			}
 			playrs_left = counter;
-			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; }
+			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * still_involved[0]]; }
 			else 
 			{ 
 				/*tie*/ 
@@ -886,8 +887,8 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				++tie[6];
 				for (int i = 0; i < playrs_left; ++i) 
 				{ 
-					++result[2 + 2 * involved_players[i]];
-					tie[involved_players[i]] += 1. / playrs_left;
+					++result[2 + 2 * still_involved[i]];
+					tie[still_involved[i]] += 1. / playrs_left;
 				}
 			}
 			break;
@@ -945,6 +946,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 		}
 		//delete[] compare_cards;
 	}
+	//cout << rank_cnt[winning_rank] << ' ' << winning_rank << endl;
 }
 
 void generate_board(int(&board)[10], int(&hands)[6 * 2 * 2], int cds[52][2], int players)
