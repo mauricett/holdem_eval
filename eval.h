@@ -32,8 +32,11 @@ string cards2[52] =
 
 //one ugly ass long 900 line function.
 //looks for winner among 6 players (with 1 hand each, i.e. not a range of hands!)
-void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt * player], int(&result)[1 + 2 * 6], double(&tie)[7], int draw, const int player)
+void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt * player], int(&result)[1 + 2 * 6], double(&tie)[7], const int player)
 {
+	int debug1 = 0;
+	int debug2 = 0;
+	debug1 = result[0];
 	sort(begin(board), begin(board) + 5);
 	for (int i = 0; i < player; ++i)
 	{
@@ -269,8 +272,10 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 						switch (sf_dif[i + 6 * p + (6 - (flush_cards[p] - 1))])
 						{
 						case 1:
-							sflush_pointer[7 * p + sflushs[p]] = &(sflush[7 * p + i + (6 - (flush_cards[p] - 1))]);
-							++sflushs[p];
+							if (i < 4) {
+								sflush_pointer[7 * p + sflushs[p]] = &(sflush[7 * p + i + (6 - (flush_cards[p] - 1))]);
+								++sflushs[p];
+							}
 							if (sflushs[p] > sf_cnt[p]) { sf_cnt[p] = sflushs[p]; }
 							break;
 						default:
@@ -285,8 +290,8 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 						switch (dif[i + 6 * p + (6 - (flush_cards[p] - 1))])
 						{
 						case 1://PROBLEM .... difs = {1, 1, 1, 1, !=1, 1} setzt einen pointer auf die letzte 1 ... daher if(i<4), hoffe das reicht
-							if (i < 4) { sflush_pointer[7 * p + sflushs[p]] = &(sflush[7 * p + i + (6 - (flush_cards[p] - 1))]); }
-							++sflushs[p];
+							if (i < 4) { sflush_pointer[7 * p + sflushs[p]] = &(sflush[7 * p + i + (6 - (flush_cards[p] - 1))]); ++sflushs[p]; }
+							
 							break;
 						default:
 							sflushs[p] = 0;
@@ -368,7 +373,6 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 	//int *compare_cards = new int[rank_cnt[winning_rank]];
 	int compare_cards[6] = {};
 	int playrs_left = rank_cnt[winning_rank];
-
 	if (rank_cnt[winning_rank] == 1) //only one player with winning rank
 	{
 		for (int p = 0; p < player; ++p)
@@ -535,7 +539,6 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 				involved_players[p] = still_involved[p];
 			}
 			playrs_left = counter;
-
 			if (playrs_left == 1) { ++result[0]; ++result[1 + 2 * involved_players[0]]; break; }
 			//else, zweite pairs vergleichen
 			max_pair = 0;
@@ -903,7 +906,7 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 			}
 			break;
 		case 10:/*sf*/
-				//ääääääääääääh wait, wir müssen NUR die HÖCHSTE karte vergleichen!!!
+			//ääääääääääääh wait, wir müssen NUR die HÖCHSTE karte vergleichen!!!
 			for (int c = 0; c < (cardcnt - 2); ++c) //müssen nur die 5 höchsten karten vergleichen
 			{
 				counter = 0;
@@ -944,9 +947,8 @@ void find_winner(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt *
 		default:
 			cout << "ERROR IN ORDERING SEKTION" << endl;
 		}
-		//delete[] compare_cards;
 	}
-	//cout << rank_cnt[winning_rank] << ' ' << winning_rank << endl;
+
 }
 
 void generate_board(int(&board)[10], int(&hands)[6 * 2 * 2], int cds[52][2], int players)
@@ -1001,11 +1003,4 @@ void generate_board(int(&board)[10], int(&hands)[6 * 2 * 2], int cds[52][2], int
 		board[i] = *deck[i + 2 * players];
 		board[i + 5] = *(deck[i + 2 * players] + 1);
 	}
-}
-
-void equity(int(&board)[10], int(&hands)[6 * 2 * 2], int(&merged)[cardcnt * player], const int player, int totalhands)
-{
-	int *cards[52];
-	int *tmp;
-	//pointers to card array. later we manipulate the addresses they point to, effectively shuffling our deck of pointers, but not our original deck.
 }
